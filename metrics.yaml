@@ -1,0 +1,58 @@
+version: '3'
+
+services:
+    cadvisor:
+        #manual: sudo docker run --volume=/:/rootfs:ro --volume=/var/run:/var/run:rw --volume=/sys:/sys:ro --volume=/var/lib/docker/:/var/lib/docker:ro --publish=8080:8080 --detach=true braingamer/cadvisor-arm:latest
+        image: braingamer/cadvisor-arm:latest
+        volumes:
+            - /:/rootfs:ro
+            - /var/run:/var/run:rw
+            - /sys:/sys:ro
+        ports:
+            - '8080:8080'
+        logging:
+            driver: fluentd
+        deploy:
+            mode: global
+            restart_policy:
+                condition: on-failure
+                delay: 5s
+                max_attempts: 3
+                window: 120s
+    prometheus:
+        #manual: docker run -d -p 9090:9090 -v $(pwd)/prometheus.yml:/etc/prometheus/prometheus.yml braingamer/prometheus-arm
+        image: braingamer/prometheus-arm:latest
+        volumes:
+            - ${PWD}/prometheus.yaml:/etc/prometheus/prometheus.yml
+        ports:
+            - '9090:9090'
+        depends_on:
+            - cadvisor
+        logging:
+            driver: fluentd
+        deploy:
+            mode: replicated
+            replicas: 1
+            restart_policy:
+                condition: on-failure
+                delay: 5s
+                max_attempts: 3
+                window: 120s
+    fluentd:
+        #manual: docker run -d -p 24224:24224 --log-driver journald -e "FLUENTD_CONF=fluentd.conf" -v $(pwd):/fluentd/etc buffalo/armhf-fluentd
+        image: buffalo/armhf-fluentd:latest
+        volumes:
+            - ${PWD}:/fluentd/etc
+        environment:
+            FLUENTD_CONF: fluentd.conf
+        logging:
+            driver: journald
+        ports:
+            - '24224:24224'
+        deploy:
+            mode: global
+            restart_policy:
+                condition: on-failure
+                delay: 5s
+                max_attempts: 3
+                window: 120s

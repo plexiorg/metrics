@@ -1,0 +1,10 @@
+global:
+    scrape_interval: 15s
+    evaluation_interval: 15s
+    external_labels:
+        monitor: 'pleximon'
+scrape_configs:
+    - job_name: 'cadvisorpromjob'
+      scrape_interval: 5s
+      static_configs:
+          - targets: ['plexipi01:8080', 'plexipi02:8080', 'plexipi03:8080']
